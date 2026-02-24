@@ -1,0 +1,14 @@
+variables: lastbar(false);
+
+lastbar = sessionlastbar;
+
+If currentbar > 1 then 
+	begin
+		If Value1 >= 1 then
+			Value1 = Value1 + 1;
+			
+		If lastbar[1] then
+			Value1 = 1;
+	end;	
+
+My_BarNumbers = Value1;

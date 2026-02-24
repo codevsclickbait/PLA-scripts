@@ -1,0 +1,26 @@
+{ 	My Bearbar will tell whether the last bar is a bearbar.
+ 	A Bearbar is defined by a bar that:
+		- Closes below it's open	
+		- Closes in the lower third of the entire bar	}
+
+variables: barSize(0), lowerThird(0);
+
+// Barsize = Value of difference between low and high of the bar
+BarSize = H - L;
+
+{	Lower third is calculated byt dividing the size of the bar into three
+ 	and check if the closing price is in the lower third	} 
+lowerThird = L + (Barsize / 3);
+
+{	Creating a statement which validates whether or not we have a
+	Bearbar as the last bar and setting the function true or false	}
+If C < O and C <= lowerThird then
+	begin
+		My_Bearbar = True;
+	end
+	
+	else begin
+		My_Bearbar = False;
+	end;
+
+//Print (lowerThird);

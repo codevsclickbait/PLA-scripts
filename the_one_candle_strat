@@ -1,0 +1,69 @@
+inputs:
+    holder(0);
+
+variables:
+    15_min_open_high(0),
+    15_min_high_tl(0),
+    15_min_open_low(0),
+    15_min_low_tl(0),
+    session_last_bar(0),
+    session_first_bar(0),
+    session_start_time(0),
+    session_time(0);
+
+
+session_last_bar = sessionlastbar;
+session_time = timetominutes(time);
+session_start_time = timetominutes(sessionstarttimems(1));
+
+if session_last_bar[1] then session_first_bar = barnumber;
+
+
+//______________________________________________________________________________________________________________________________//
+//                                  Marking our range for the session with trendline
+//______________________________________________________________________________________________________________________________//
+
+// Draw high and low from the 15 minutes range of the session                                               
+if session_time = session_start_time + 15 then begin                                                        
+                                                                                                            
+    // Lock in todays range (high/low of the first 15 minutes)                                              
+    15_min_open_high = highest (high, 15);                                                                  
+    15_min_open_low  = lowest  (low, 15);                                                                   
+                                                                                                            
+    // Let's draw the high and low on the chart to better see what's going on                                   
+    tl_new_bn (session_first_bar, 15_min_open_high, barnumber, 15_min_open_high);                           
+    15_min_high_tl = tl_getactive;                                                                          
+    tl_new_bn (session_first_bar, 15_min_open_low,  barnumber, 15_min_open_low);                            
+    15_min_low_tl = tl_getactive;                                                                             
+
+end;
+
+// Now let's update the trendline for the first 120 minutes of the session
+if session_time > session_start_time + 15 and session_time <= session_start_time + 120 then begin
+    
+    tl_end_bn (15_min_high_tl, barnumber, 15_min_open_high);
+    tl_end_bn (15_min_low1_tl, barnumber, 15_min_open_low);
+
+end;
+//______________________________________________________________________________________________________________________________//
+//______________________________________________________________________________________________________________________________//
+//______________________________________________________________________________________________________________________________//
+
+
+// bo example
+// mark out 15min opening range
+// switch to 5min and wait for a bar breaking above or belove said range
+// switch to 1min shows a second bullish bar that can confirm the breakout, and enter on the close.
+// set stoploss below the breakout bar and profit at 2x risk
+
+
+
+// retest
+// mark out 15 min opening range
+// 5min bo high or low
+// 1min restet of support, buy bull doji close, top of micro tr, stoploss below previous pb low, profit 2x risk
+
+// reversal setups
+// 15 min range opening range
+// 5min bo to the downside
+// 1min look for restest or reversion (fails). reverses into range, look for support at low area and trade strong bullbar

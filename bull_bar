@@ -1,0 +1,24 @@
+{ 	My Bullbar will tell whether the last bar is a bullbar.
+ 	A bullbar is defined by a bar that:
+		- Closes above it's open	
+		- Closes in the upper third of the entire bar	}
+
+variables: barSize(0), upperThird(0);
+
+// Barsize = Value of difference between low and high of the bar
+BarSize = H - L;
+
+{	Upper third is calculated byt dividing the size of the bar into three
+ 	and check if the closing price is in the upper third	} 
+upperThird = H - (Barsize / 3);
+
+{	Creating a statement which validates whether or not we have a
+	bullbar as the last bar and setting the function true or false	}
+If C > O and C >= upperThird then
+	begin
+		My_Bullbar = True;
+	end
+	
+	else begin
+		My_Bullbar = False;
+	end;

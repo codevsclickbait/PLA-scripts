@@ -1,0 +1,22 @@
+Inputs: dRange(NumericSimple);
+
+// When bar opens and closes near the same price
+
+// Subtract the Open and close based on whether one ig high then the other
+
+If C > O then value1 = C - O;
+
+If O > C then value1 = O - C;
+	
+// Decide a the price difference acceptable for a dojibar
+// Based the total size of the bar
+
+// Barsize
+value2 = H - L;
+
+//Determining size of body compared to entire bar
+value3 = value2 / value1;
+
+If value3 < Range then My_DojiBar = False;
+
+If value3 >= Range then My_DojiBar = True;
