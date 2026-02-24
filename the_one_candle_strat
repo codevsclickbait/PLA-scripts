@@ -20,7 +20,7 @@ if session_last_bar[1] then session_first_bar = barnumber;
 
 
 //______________________________________________________________________________________________________________________________//
-//                                  Marking our range for the session with trendline
+//                                  Drawing our range for the session with trendline
 //______________________________________________________________________________________________________________________________//
 
 // Draw high and low from the 15 minutes range of the session                                               
