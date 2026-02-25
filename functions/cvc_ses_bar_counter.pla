@@ -11,4 +11,4 @@ If currentbar > 1 then
 			Value1 = 1;
 	end;	
 
-My_BarNumbers = Value1;
+cvc_ses_bar_counter = Value1;

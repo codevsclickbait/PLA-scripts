@@ -19,15 +19,3 @@ if round(value1 / calc_risk_amount,0) <= 0 then
 	cvc_trade_size = 1
 else
 	cvc_trade_size = round(value1 / calc_risk_amount,0);
-
-//print (
-//		"Accountsize = ", accountsize, newline,
-//		"risk pct in decimal = ", risk_size_in_pct / 100, NewLine,
-//		"Risk in amount of account = ", accountsize * (risk_size_in_pct / 100), newline, newline,
-		
-//		"Risk in points = ", risk_size_in_points, NewLine,
-//		"Risk in points / ticksize = ", risk_size_in_points*bigpointvalue , NewLine, NewLine,
-		
-//		"points / pct = ", value1, " / ", calc_risk_amount, newline,
-//		" = ", Round(value1 / calc_risk_amount,0)
-//		, NewLine, newline);

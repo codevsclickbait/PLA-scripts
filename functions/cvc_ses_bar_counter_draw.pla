@@ -1,0 +1,17 @@
+Inputs: distance(2);
+
+variables: barNo(""), myText(0);
+
+barNo = NumToStr(cvc_ses_bar_counter, 0);
+
+If cvc_ses_bar_counter >= 1 then
+	begin
+		text_new_bn(barnumber, l - distance, barNo);
+		myText = text_getactive;
+		text_setcolor(myText, black);
+		text_setbgcolor(myText, white);
+		text_setstyle(myText, 2, 2);
+		text_setfontname(myText, "courier");
+		text_setsize(myText, 4);
+	end;
+		
