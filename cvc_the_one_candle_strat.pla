@@ -1,20 +1,42 @@
+// 									Notes
+// When running this stratetgy as it is thought to be run, you must set maxbarsback in the 
+// strategy properties to 406, otherwise it will error out.
+
 inputs:
-    holder(0);
+    long_profit_multiplier(2),
+    short_profit_multiplier(2),
+    risk_in_pct(2);
 
 variables:
+    // 15 minute range definitions
     fifteen_min_open_high(0),
-    fifteen_min_high_tl(0),
     fifteen_min_open_low(0),
+    fifteen_min_high_tl(0),
     fifteen_min_low_tl(0),
+    
+    // Session definitions
     session_last_bar(false),
     session_first_bar(0),
     session_start_time(0),
-    session_time(0);
+    session_end_time(0),
+    session_time(0),
+
+    // Other things price related
+    opening_higher_low(0),      // Not the best naming, but it will do
+    opening_lower_high(0),      // Not the best naming, but it will do
+    
+    // Trading realted ... erm... stuff!
+	high_break_on_5_min(0),
+	low_break_on_5_min(0),
+    stoploss_points(0),
+    profittarget_points(0),
+    shares_to_trade(0);
 
 
 session_last_bar = sessionlastbar;
 session_time = timetominutes(time);
 session_start_time = timetominutes(sessionstarttimems(1));
+session_end_time = timetominutes(sessionendtimems(1));
 
 if session_last_bar[1] then session_first_bar = barnumber;
 
@@ -52,15 +74,140 @@ if session_time > session_start_time + 15 and session_time <= session_start_time
     tl_setend_bn (fifteen_min_low_tl, barnumber, fifteen_min_open_low);
 
 end;
+
 //______________________________________________________________________________________________________________________________//
+//                          Marking 5 minute bars with arrows to make sure we catch the correct bars
+//______________________________________________________________________________________________________________________________//
+
+// Capturing every 5 minute bar
+if Mod(session_time, 5) = 0 then begin
+ 	
+	if low data(2) < fifteen_min_open_high and close data(2) > fifteen_min_open_high then print ("Bar in session = ", cvc_ses_bar_counter, "  -  close below 15 minute high");
+	
+    // Marking every 5 minute bar that break above or below the 15 minute range
+    // Subsequently setting a variable to signal that a B.O. has occurred
+    // I'm using the function cvc_bull/bear_bar because it validates if the bar is string and not just open over close or vice versa
+    if low data(2) < fifteen_min_open_high and close data(2) > fifteen_min_open_high and cvc_bull_bar data(2) then begin
+	    arw_new_bn (BarNumber, low data(2)-2,False);
+        arw_setcolor (arw_getactive, green);
+		high_break_on_5_min = 1;
+    end;
+
+    if high data(2) > fifteen_min_open_low and close data(2) < fifteen_min_open_low and cvc_bear_bar data(2) then begin
+	    arw_new_bn (barnumber, high data(2) + 2, true);
+        arw_setcolor (arw_getactive, red);
+        low_break_on_5_min = 1;
+	end;
+    
+end;
+
+//______________________________________________________________________________________________________________________________//
+//                          Calculating the opening high/low support/resistance price
+//______________________________________________________________________________________________________________________________//
+
+// Setting a range between the 15 minutes opening high/low and the highest/lowest close since session started
+// The cvc_ses_bar_counter counts session bar 1 as 1 and can be used for looking back to the beginning
+// eg. if these trigger on the 21st bar of the session the [1] will make the look-back command, look back 20 bars
+
+if high_break_on_5_min = 1 and barnumber[1] > 2 then opening_higher_low = highest(close, cvc_ses_bar_counter[1]);    
+if low_break_on_5_min = 1 and barnumber[1] > 2 then opening_lower_high = lowest(close, cvc_ses_bar_counter[1]);
+
+//______________________________________________________________________________________________________________________________//
+//                          Looking for a second bullbar on the 1-minute chart to confirm B.O.
+//______________________________________________________________________________________________________________________________//
+
+// I do want to draw up where trades would be taken before we test, because it's easier to see how the code thinks.
+// Check if we've got a breakout and also if we have a close 
+// I'm gonna use cvc_bull/bear_bar again to be sure that the bars are strong
+if high_break_on_5_min = 1 
+    and cvc_bull_bar data(2) 
+    and low data(2) < fifteen_min_open_high 
+    and close data(2) > fifteen_min_open_high 
+	and session_time <= session_start_time + 120
+    and marketposition = 0
+    then begin
+
+        arw_new_bn (barnumber, low data(2) - 3, false);
+        arw_setcolor (arw_getactive, magenta);
+        // Now we'll see if we can get a continuation trade on the 1-min chart
+        // We'll start by setting stoploss and profittarget
+        // Calculating stoploss using the lowest low of the last 3 bars. I may com back to this and seee if I can make more dynamic.
+        // Oh yeah, the '2 * ticksize' just makes sure that the stop is set 2 ticks below the lowest low
+        stoploss_points = ((absvalue(Close - lowest(low, 3))) / ticksize) - (2 * ticksize);
+        // So much going on... Profittarget is going to be 2xrisk. 
+        // BUT! It would be nice to be able to see if there are other multiplier that can gain us more BUCKAROOS!!!
+        profittarget_points = stoploss_points * long_profit_multiplier;
+        // This little function takes the value of you account, uses your risk willingness to figure out how many shares to buy. (just go with 100% ;) Don't listen to me, anything above 3% is pretty insane)
+        shares_to_trade = cvc_trade_size (risk_in_pct, stoploss_points);
+        buy ( "boL" ) shares_to_trade shares this bar Close; // Yay we went long!
+        // Resetting the break out trigger
+        high_break_on_5_min = 0;
+end;
+   
+// I'm gonna do all the same stuff as above you in reverse. Makes sense, yeah?
+// Don't worry it will :D
+if low_break_on_5_min = 1 
+    and cvc_bear_bar data(2)
+    and high data(2) > fifteen_min_open_low
+    and close data(2) < fifteen_min_open_low
+	and session_time <= session_start_time + 120
+    and marketposition = 0
+    then begin
+
+        arw_new_bn (barnumber, high data(2) + 3, true);
+        arw_setcolor (arw_getactive, magenta);
+
+        // Yada yada yada, I'm not gonna write all the same stuff again
+        stoploss_points = ((absvalue(highest(high, 3) - close)) / ticksize) + (2 * ticksize);
+        profittarget_points = stoploss_points * short_profit_multiplier;
+        shares_to_trade = cvc_trade_size (risk_in_pct, stoploss_points);
+        SellShort ( "boS" ) shares_to_trade shares this bar close;
+        // WoW!! That looks like a lot less that the other one, do you follow?
+        low_break_on_5_min = 0;
+end;
+
+//______________________________________________________________________________________________________________________________//
+//              I'll set thos stop loss and profit positions now, because I totally didn't forget about it
+//______________________________________________________________________________________________________________________________//
+
+if marketposition <> 0 then begin
+	
+	// The beauty of doing it this way is that we save to variables. We kinda have plenty, 
+	// I'm totally lost in this thing, but hey, the guy said it was stupid simple... heh...
+	setstopposition; // For some reason MC requires this line, which is sooooo weird
+	setstoploss_pt (stoploss_points);
+	setprofittarget_pt (profittarget_points);
+
+end;
+
+//______________________________________________________________________________________________________________________________//
+//                     End of day reset to avoid running position over night and carrying over variables
+//______________________________________________________________________________________________________________________________//
+
+If session_end_time = session_time + 1 then begin
+
+    // If we have any open positions, we'll close them here. CHiCHiNG! well... hopefully :S
+    Sell ( "eodS" ) this bar;
+    BuyToCover ( "eodL" ) this bar;
+
+    // Resetting trading variables
+    high_break_on_5_min = 0;
+    low_break_on_5_min = 0;
+
+end;
+
+
 //______________________________________________________________________________________________________________________________//
 //______________________________________________________________________________________________________________________________//
 
 
 // bo example
 // **** mark out 15min opening range **** DONE ****
-// switch to 5min and wait for a bar breaking above or belove said range
+// **** Capturing every 5 minute bar **** DONE ****
+// **** switch to 5min and wait for a bar breaking above or belove said range **** DONE ****
+// **** Ooops... Completely forgot to set a support/resistance area, based on the the top of the opening range, getting on it **** Pretend you didn't se that DONE ****
 // switch to 1min shows a second bullish bar that can confirm the breakout, and enter on the close.
+// **** Set a general stop to exit on the end of the session
 // set stoploss below the breakout bar and profit at 2x risk
 
 // retest
