@@ -1,0 +1,22 @@
+// Function calculating high of any timeframe on any chart
+Inputs:
+    timeframe(numericsimple);       // Timeframe delivered from primary signal
+
+Variables:
+    session_time(0),
+    session_start(0),
+	first_bar_in_session(0),
+	last_bar_inside_timeframe(0);
+
+session_time = timetominutes(time);
+session_start = timetominutes(sessionstarttimems(0));
+
+// Recording the first bar in the session
+if session_time = session_start then first_bar_in_session = BarNumber;
+
+// Recording current bar in session
+if session_time <= session_start + timeframe then last_bar_inside_timeframe = barnumber;
+
+// Calculating high of the timefra needed
+if session_start + timeframe >= session_time then
+    cvc_timeframe_high = high[last_bar_inside_timeframe - first_bar_in_session];
